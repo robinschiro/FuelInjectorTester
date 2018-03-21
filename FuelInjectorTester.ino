@@ -79,13 +79,12 @@ void setup()
 	LCD.setCursor(0, 0);
 
 	// Print a simple message
-	LCD.print("Select RPM");
+	LCD.print("RPM Set");
 
 	CalculateDelayAndRpmFromPot();
 
 	// Move to the begining of the second line
-	LCD.setCursor(0, 1);
-	LCD.print(CurrentRPM);
+	PrintRPM(CurrentRPM);
 }
 
 void loop()
@@ -149,11 +148,22 @@ void PrintRPM(int rpm)
 {
 	// Create formatted RPM string.
 	char rpmFormatted[17];
-	sprintf(rpmFormatted, "%-8d", rpm);
+	sprintf(rpmFormatted, "%-4d", rpm);
 
 	// Print to lcd.
 	LCD.setCursor(0, 1);
 	LCD.print(rpmFormatted);
+}
+
+void PrintToLine(char* data, int lineNumber)
+{
+	LCD.setCursor(0, lineNumber);
+
+	char dataFormatted[17];
+	sprintf(dataFormatted, "%-16s", data);
+
+	LCD.print(dataFormatted);
+
 }
 
 void ToggleMode()
@@ -161,10 +171,12 @@ void ToggleMode()
 	if (DriveInjectors == CurrentMode)
 	{
 		CurrentMode = DriveUI;
+		PrintToLine("Select RPM", 0);
 	}
 	else
 	{
 		CurrentMode = DriveInjectors;
+		PrintToLine("RPM Set", 0);
 	}
 }
 
