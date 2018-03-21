@@ -1,0 +1,14 @@
+Arduino Parts for Fuel Injector Project:
+
+Vetco Electronics
+15 day return policy
+
+- New Arduino
+- 2x Stackable header pins
+    - 10 Pin Stacking Headers for Arduino (SKU: VUPN6552)
+- Maybe a new shield that better fits my transistors
+    - Need connections from the digital I/O pins to the shield holes
+- Maybe a solution for my cable problem?
+- Maybe a perf board?
+    
+    
