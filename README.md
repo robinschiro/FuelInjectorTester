@@ -28,27 +28,6 @@ Issue with Arduino/Protothreads/Printing to LCD Every Frame:
 
 Possible Solution:
     - Only drive the fuel injectors when in DRIVE_INJECTORS mode. In this mode, the UI is not updated. After exiting this mode, the UI will become responsive again.
-    
-Plan For Soldering Prototype Board:
-[DONE] De-solder the "white" LED, try to find actual white one.
-- [DONE] Solder in all cables that are underneath the board
-    - [DONE] Verify connectivity
-- [ALMOST DONE] Solder in all cables on top layer
-    - Need to solder new ground wires + pot 5V line
-    - Verify connectivity
-- Solder in resistors
-    - [DONE] LED resistors
-    - Base resistors
-    - [DONE] Will need to find 2 additional 100 OHM resistors in lab
-- Solder in transitors
-- Solder in potentiometer
-- Create solder bridges (excluding fuel injector cable connection points)
-- Solder splice fuel injector cables to proper lower-gauge cables found in Garage
-    - If Garage does not have proper cabling, then use the cables I already have
-- Solder those cables into the board 
-    
-
-
 
 # Express PCB Plus Grid Layout:
 Grid: 2.5 mm
