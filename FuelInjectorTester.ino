@@ -14,12 +14,12 @@
 #define btnLEFT   3
 #define btnSELECT 4
 #define btnNONE   5
-#define NUM_INJECTORS 6
+#define MAX_NUM_INJECTORS 6
 #define POT_PIN 5
 #define RPM_INCREMENT 600
 #define RPM_MAX 8000
 #define RPM_MIN 0
-#define INJECTOR_BURST_TIME 5
+#define INJECTOR_BURST_TIME 3
 #define DELAY_MIN 10
 #define DELAY_MAX 15000
 
@@ -38,7 +38,13 @@ LiquidCrystal LCD(8, 9, 4, 5, 6, 7);
 
 // Create array of pins to be used for fuel injectors.
 // The order of the pins in this array matches the order of the LEDs on the board.
-int INJECTOR_PINS[NUM_INJECTORS] = { 3, 13, 12, 2, 1, 11 };
+int INJECTOR_PINS[MAX_NUM_INJECTORS] = { 3, 13, 12, 2, 1, 11 };
+
+// Firing order for four-cylinder engine.
+int FOUR_CYLINDER_PINS[4] = { INJECTOR_PINS[0], INJECTOR_PINS[2], INJECTOR_PINS[3], INJECTOR_PINS[1] };
+
+// Firing order for six-cylinder engine.
+int SIX_CYLINDER_PINS[6] = { INJECTOR_PINS[0], INJECTOR_PINS[4], INJECTOR_PINS[2], INJECTOR_PINS[5], INJECTOR_PINS[1], INJECTOR_PINS[3] };
 
 // Define some values used by the panel and buttons
 int LcdKey = 0;
@@ -53,15 +59,15 @@ int CurrentRPM = 0;
 // Used to keep track of current delay for fuel injectors (calculated from RPM)
 int CurrentDelay = DELAY_MAX;
 
+// Keep track of current firing order and number of cylinders.
+int* CurrentFiringOrder = FOUR_CYLINDER_PINS;
+int CurrentNumCylinders = 4;
+
 // Keep track of potentiometer value
 int PotValue = 0;
 
 // Mode of the application.
 Mode CurrentMode = DriveUI;
-
-/* Function Prototypes */
-
-void PrintMode();
 
 /* Functions */
 
@@ -73,7 +79,7 @@ void setup()
 
 	// Initialize all digital pins as an outputs for the fuel injector.
 	int i;
-	for (i = 0; i < NUM_INJECTORS; i++)
+	for (i = 0; i < MAX_NUM_INJECTORS; i++)
 	{		
 		pinMode(INJECTOR_PINS[i], OUTPUT);
 	}
@@ -87,7 +93,7 @@ void setup()
 	CalculateDelayAndRpmFromPot();
 
 	// Move to the begining of the second line
-	PrintRPM(CurrentRPM);
+	PrintRpmAndEngineType(CurrentRPM, CurrentNumCylinders);
 }
 
 void loop()
@@ -146,37 +152,33 @@ void CalculateDelayAndRpmFromPot()
 	CurrentDelay = CalculateDelayFromRpm(CurrentRPM);
 }
 
-void PrintRPM(int rpm)
-{
-	// Create formatted RPM string.
-	char rpmFormatted[17];
-	sprintf(rpmFormatted, "%-4d", rpm);
-
-	// Print to lcd.
-	LCD.setCursor(0, 1);
-	LCD.print(rpmFormatted);
-}
-
 void PrintToLine(char* data, int lineNumber)
 {
-	LCD.setCursor(0, lineNumber);
+    LCD.setCursor(0, lineNumber);
 
-	char dataFormatted[17];
-	sprintf(dataFormatted, "%-16s", data);
+    char dataFormatted[17];
+    sprintf(dataFormatted, "%-16s", data);
 
-	LCD.print(dataFormatted);
+    LCD.print(dataFormatted);
+}
 
+void PrintRpmAndEngineType(int rpm, int numCylinders)
+{	
+	char rpmAndEngineString[17];
+	sprintf(rpmAndEngineString, "%-4d%-4s%4d%-4s", rpm, " RPM", numCylinders, " Cyl");
+
+    PrintToLine(rpmAndEngineString, 1);
 }
 
 void PrintMode()
 {
     if (DriveInjectors == CurrentMode)
     {
-        PrintToLine("RPM Set", 0);
+        PrintToLine("Running Test...", 0);
     }
     else
     {
-        PrintToLine("Select RPM", 0);
+        PrintToLine("Configure Test", 0);
     }
 }
 
@@ -190,7 +192,20 @@ void ToggleMode()
 	{
 		CurrentMode = DriveInjectors;
 	}
-    PrintMode();
+}
+
+void ToggleEngineType()
+{
+    if (4 == CurrentNumCylinders)
+    {
+        CurrentNumCylinders = 6;
+        CurrentFiringOrder = SIX_CYLINDER_PINS;
+    }
+    else
+    {
+        CurrentNumCylinders = 4;
+        CurrentFiringOrder = FOUR_CYLINDER_PINS;
+    }
 }
 
 // TODO: Separate button reading from LCD display logic. (should be separate threads)
@@ -201,7 +216,7 @@ static int ProcessUI(struct pt *pt)
 	if (DriveUI == CurrentMode)
 	{
 		CalculateDelayAndRpmFromPot();
-		PrintRPM(CurrentRPM);
+		PrintRpmAndEngineType(CurrentRPM, CurrentNumCylinders);
 	}
 
 	LcdKey = ReadLCDButtons();
@@ -213,6 +228,12 @@ static int ProcessUI(struct pt *pt)
 		}
 		case btnLEFT:
 		{
+            if (DriveUI == CurrentMode)
+            {
+                ToggleEngineType();
+
+                delay(500);
+            }
 			break;
 		}
 		case btnUP:
@@ -225,8 +246,8 @@ static int ProcessUI(struct pt *pt)
 		}
 		case btnSELECT:
 		{
-			// Toggle mode when select is hit.
 			ToggleMode();
+            PrintMode();
 			
 			delay(500);
 			break;
@@ -249,13 +270,13 @@ static int DriveFuelInjectorsPT(struct pt *pt)
         PT_BEGIN(pt);
 
 		// Execute bursts of fuel injectors in proper order.
-		for (i; i < NUM_INJECTORS; i++)
+		for (i; i < CurrentNumCylinders; i++)
 		{
-			digitalWrite(INJECTOR_PINS[i], HIGH);
+			digitalWrite(CurrentFiringOrder[i], HIGH);
 			delay(INJECTOR_BURST_TIME);
-			digitalWrite(INJECTOR_PINS[i], LOW);
+			digitalWrite(CurrentFiringOrder[i], LOW);
 
-            PT_WAIT_UNTIL(pt, millis() - timestamp > (CurrentDelay / NUM_INJECTORS));
+            PT_WAIT_UNTIL(pt, millis() - timestamp > (CurrentDelay / CurrentNumCylinders));
             timestamp = millis();
 		}
         i = 0;
