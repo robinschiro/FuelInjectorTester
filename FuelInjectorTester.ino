@@ -37,7 +37,8 @@ typedef enum _Mode
 LiquidCrystal LCD(8, 9, 4, 5, 6, 7);
 
 // Create array of pins to be used for fuel injectors.
-int INJECTOR_PINS[NUM_INJECTORS] = { 1, 2, 3, 11, 12, 13 };
+// The order of the pins in this array matches the order of the LEDs on the board.
+int INJECTOR_PINS[NUM_INJECTORS] = { 3, 13, 12, 2, 1, 11 };
 
 // Define some values used by the panel and buttons
 int LcdKey = 0;
@@ -56,10 +57,13 @@ int CurrentDelay = DELAY_MAX;
 int PotValue = 0;
 
 // Mode of the application.
-Mode CurrentMode = DriveInjectors;
+Mode CurrentMode = DriveUI;
+
+/* Function Prototypes */
+
+void PrintMode();
 
 /* Functions */
-
 
 void setup()
 {
@@ -78,8 +82,7 @@ void setup()
 	LCD.begin(16, 2);
 	LCD.setCursor(0, 0);
 
-	// Print a simple message
-	LCD.print("RPM Set");
+    PrintMode();
 
 	CalculateDelayAndRpmFromPot();
 
@@ -91,7 +94,6 @@ void loop()
 {
 	ProcessUI(&UiThread);
 	DriveFuelInjectorsPT(&DriverThread);
-	//DriveFuelInjectorsNonPT();
 }
 
 // Read the buttons
@@ -166,18 +168,29 @@ void PrintToLine(char* data, int lineNumber)
 
 }
 
+void PrintMode()
+{
+    if (DriveInjectors == CurrentMode)
+    {
+        PrintToLine("RPM Set", 0);
+    }
+    else
+    {
+        PrintToLine("Select RPM", 0);
+    }
+}
+
 void ToggleMode()
 {
 	if (DriveInjectors == CurrentMode)
 	{
 		CurrentMode = DriveUI;
-		PrintToLine("Select RPM", 0);
 	}
 	else
 	{
 		CurrentMode = DriveInjectors;
-		PrintToLine("RPM Set", 0);
 	}
+    PrintMode();
 }
 
 // TODO: Separate button reading from LCD display logic. (should be separate threads)
@@ -204,14 +217,10 @@ static int ProcessUI(struct pt *pt)
 		}
 		case btnUP:
 		{
-			//currentRPM += RPM_INCREMENT;
-			delay(500);
 			break;
 		}
 		case btnDOWN:
 		{
-			//currentRPM -= RPM_INCREMENT;
-			delay(500);
 			break;
 		}
 		case btnSELECT:
@@ -236,37 +245,21 @@ static int DriveFuelInjectorsPT(struct pt *pt)
 	if ( (DriveInjectors == CurrentMode) && (CurrentDelay > INJECTOR_BURST_TIME) && (CurrentRPM > 0))
 	{
 		static unsigned long timestamp = 0;
-		PT_BEGIN(pt);
+        static int i = 0;
+        PT_BEGIN(pt);
 
 		// Execute bursts of fuel injectors in proper order.
-		int i;
-		for (i = 0; i < NUM_INJECTORS; i++)
+		for (i; i < NUM_INJECTORS; i++)
 		{
 			digitalWrite(INJECTOR_PINS[i], HIGH);
 			delay(INJECTOR_BURST_TIME);
 			digitalWrite(INJECTOR_PINS[i], LOW);
-		}
 
-		// Wait for small amount of time before bursting again.
-		PT_WAIT_UNTIL(pt, millis() - timestamp > CurrentDelay);
-		timestamp = millis();
+            PT_WAIT_UNTIL(pt, millis() - timestamp > (CurrentDelay / NUM_INJECTORS));
+            timestamp = millis();
+		}
+        i = 0;
 
 		PT_END(pt);
 	}
 }
-
-void DriveFuelInjectorsNonPT()
-{
-	if (CurrentDelay > 0)
-	{
-		int i;
-		for ( i = 0; i < NUM_INJECTORS; i++ )
-		{
-			digitalWrite(INJECTOR_PINS[i], HIGH);
-			delay(INJECTOR_BURST_TIME);
-			digitalWrite(INJECTOR_PINS[i], LOW);
-		}
-		delay(CurrentDelay);
-	}
-}
-
