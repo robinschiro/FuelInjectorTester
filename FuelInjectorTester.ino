@@ -16,12 +16,15 @@
 #define btnNONE   5
 #define MAX_NUM_INJECTORS 6
 #define POT_PIN 5
-#define RPM_INCREMENT 600
+#define LARGE_RPM_INCREMENT 100
+#define SMALL_RPM_INCREMENT 10
 #define RPM_MAX 8000
 #define RPM_MIN 0
-#define INJECTOR_BURST_TIME 3
 #define DELAY_MIN 10
 #define DELAY_MAX 15000
+#define INJECTION_TIME_MAX 12
+#define INJECTION_TIME_MIN 2
+#define INJECTION_TIME_INCREMENT 1
 
 /* Enums */
 typedef enum _Mode
@@ -63,8 +66,10 @@ int CurrentDelay = DELAY_MAX;
 int* CurrentFiringOrder = FOUR_CYLINDER_PINS;
 int CurrentNumCylinders = 4;
 
-// Keep track of potentiometer value
-int PotValue = 0;
+// Keep track of current RPM tenth's place;
+int CurrentRpmTenthsPlace = 0;
+
+int CurrentInjectionTime = INJECTION_TIME_MIN;
 
 // Mode of the application.
 Mode CurrentMode = DriveUI;
@@ -93,7 +98,7 @@ void setup()
 	CalculateDelayAndRpmFromPot();
 
 	// Move to the begining of the second line
-	PrintRpmAndEngineType(CurrentRPM, CurrentNumCylinders);
+	PrintConfigInfo(CurrentRPM, CurrentInjectionTime, CurrentNumCylinders);
 }
 
 void loop()
@@ -117,10 +122,11 @@ int ReadLCDButtons()
 	return btnNONE;
 }
 
-int CalculateRpmFromPot(int pot)
+int CalculateRpmFromPot(int pot, int tenthsPlace)
 {
 	int rpm = (int)(RPM_MIN + (RPM_MAX - RPM_MIN) * ((float)pot / 1024));
-	rpm = (rpm / 100) * 100;
+	rpm = (rpm / LARGE_RPM_INCREMENT) * LARGE_RPM_INCREMENT;
+    rpm += tenthsPlace;
 	return rpm;
 }
 
@@ -130,7 +136,7 @@ int CalculateDelayFromRpm(int rpm)
 	if (rpm > 0)
 	{
 	    float period = 1000.0 / (rpm / 120.0);
-		delay = (int)period - INJECTOR_BURST_TIME;
+		delay = (int)period - CurrentInjectionTime;
 		if (delay < 0)
 		{
 			delay = DELAY_MIN;
@@ -140,13 +146,19 @@ int CalculateDelayFromRpm(int rpm)
 	return delay;
 }
 
+int CalculatePotValue()
+{
+    int rawPotValue = analogRead(POT_PIN);
+    return 1024 - rawPotValue;
+}
+
 void CalculateDelayAndRpmFromPot()
 {
 	// Read value of potentiometer.
-	PotValue = analogRead(POT_PIN);
+	int potValue = CalculatePotValue();
 
 	// Use potentiometer to set the RPM value.
-	CurrentRPM = CalculateRpmFromPot(PotValue);
+	CurrentRPM = CalculateRpmFromPot(potValue, CurrentRpmTenthsPlace);
 
 	// Recalculate burst delay based on the current RPM setting.
 	CurrentDelay = CalculateDelayFromRpm(CurrentRPM);
@@ -162,10 +174,11 @@ void PrintToLine(char* data, int lineNumber)
     LCD.print(dataFormatted);
 }
 
-void PrintRpmAndEngineType(int rpm, int numCylinders)
+void PrintConfigInfo(int rpm, int injectionTime, int numCylinders)
 {	
 	char rpmAndEngineString[17];
-	sprintf(rpmAndEngineString, "%-4d%-4s%4d%-4s", rpm, " RPM", numCylinders, " Cyl");
+    sprintf(rpmAndEngineString, "%-4d%-4s%-2d%4d%-1s", rpm, "RPM", injectionTime, numCylinders, "C");
+    sprintf(rpmAndEngineString, "%2s%-4d%4s%-2d%3s%1d", "R:", rpm, " IT:", injectionTime, " C:", numCylinders);
 
     PrintToLine(rpmAndEngineString, 1);
 }
@@ -208,6 +221,26 @@ void ToggleEngineType()
     }
 }
 
+void UpdateRpmTenthsPlace(int delta)
+{
+    int updatedValue = CurrentRpmTenthsPlace + delta;
+
+    if (updatedValue >= 0 && updatedValue <= 90)
+    {
+        CurrentRpmTenthsPlace = updatedValue;
+    }
+}
+
+void UpdateInjectionTime(int delta)
+{
+    int updatedValue = CurrentInjectionTime + delta;
+
+    if (updatedValue >= INJECTION_TIME_MIN && updatedValue <= INJECTION_TIME_MAX)
+    {
+        CurrentInjectionTime = updatedValue;
+    }
+}
+
 // TODO: Separate button reading from LCD display logic. (should be separate threads)
 static int ProcessUI(struct pt *pt)
 {
@@ -216,32 +249,40 @@ static int ProcessUI(struct pt *pt)
 	if (DriveUI == CurrentMode)
 	{
 		CalculateDelayAndRpmFromPot();
-		PrintRpmAndEngineType(CurrentRPM, CurrentNumCylinders);
+		PrintConfigInfo(CurrentRPM, CurrentInjectionTime, CurrentNumCylinders);
 	}
 
 	LcdKey = ReadLCDButtons();
 	switch (LcdKey)
-	{
-		case btnRIGHT:
-		{
-			break;
-		}
+	{		
+        case btnRIGHT:
 		case btnLEFT:
 		{
             if (DriveUI == CurrentMode)
             {
                 ToggleEngineType();
-
                 delay(500);
             }
 			break;
 		}
 		case btnUP:
 		{
+            //UpdateRpmTenthsPlace(SMALL_RPM_INCREMENT);
+            if (DriveUI == CurrentMode)
+            {
+                UpdateInjectionTime(INJECTION_TIME_INCREMENT);
+                delay(500);
+            }
 			break;
 		}
 		case btnDOWN:
 		{
+            //UpdateRpmTenthsPlace(-SMALL_RPM_INCREMENT);
+            if (DriveUI == CurrentMode)
+            {
+                UpdateInjectionTime(-INJECTION_TIME_INCREMENT);
+                delay(500);
+            }
 			break;
 		}
 		case btnSELECT:
@@ -263,7 +304,7 @@ static int ProcessUI(struct pt *pt)
 
 static int DriveFuelInjectorsPT(struct pt *pt)
 {
-	if ( (DriveInjectors == CurrentMode) && (CurrentDelay > INJECTOR_BURST_TIME) && (CurrentRPM > 0))
+	if ( (DriveInjectors == CurrentMode) && (CurrentRPM > 0))
 	{
 		static unsigned long timestamp = 0;
         static int i = 0;
@@ -273,7 +314,7 @@ static int DriveFuelInjectorsPT(struct pt *pt)
 		for (i; i < CurrentNumCylinders; i++)
 		{
 			digitalWrite(CurrentFiringOrder[i], HIGH);
-			delay(INJECTOR_BURST_TIME);
+			delay(CurrentInjectionTime);
 			digitalWrite(CurrentFiringOrder[i], LOW);
 
             PT_WAIT_UNTIL(pt, millis() - timestamp > (CurrentDelay / CurrentNumCylinders));
