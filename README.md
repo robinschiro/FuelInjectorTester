@@ -1,6 +1,18 @@
 # FuelInjectorTester
 An Arduino-based device used to control fuel injectors for testing purposes.
 
+# Compiling the Code
+
+- Get the Arduino IDE (https://www.arduino.cc/en/Main/OldSoftwareReleases)
+- Unzip all dependencies (located in the 'Dependencies' folder) into the Arduino 'libraries' folder. The Arduino 'libraries' folder is located in the following locations (platform dependent):
+	- (Windows) C:\Users\{User}\Documents\Arduino\libraries
+	- (Unix) ~/sketchbook/libraries
+- Open the 'FuelInjectorTester.ino' file using the Arduino IDE
+- Click the button with a checkmark (top-left corner) to compile the code.
+
+# Uploading code to Arduino
+
+
 
 # Requirements
 
