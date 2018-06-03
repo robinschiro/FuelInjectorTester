@@ -1,6 +1,10 @@
 # FuelInjectorTester
 An Arduino-based device used to control fuel injectors for testing purposes.
 
+# Background Information
+
+- Injector injects onces per two turns of the engine
+
 # Compiling the Code
 
 - Get the Arduino IDE (https://www.arduino.cc/en/Main/OldSoftwareReleases)
@@ -10,36 +14,32 @@ An Arduino-based device used to control fuel injectors for testing purposes.
 - Open the 'FuelInjectorTester.ino' file using the Arduino IDE
 - Click the button with a checkmark (top-left corner) to compile the code.
 
-# Uploading code to Arduino
+# Uploading Code to Arduino
 
 
 
 # Requirements
 
-- Injector open for 3 ms at 1000 RPM
-- At 6000 RPM, it can be open for 12-15 ms
-- Have adjustment to have only one open at a time. for 4 injectors, 1 3 4 2 is firing order
-- Support 6 injectors (option to have 6 or 4 injectors)
-- LED lights that light up with fuel injector
+- Support 4, 6, or 8 injectors
+- LED lights that light up with fuel injectors
+- Be able to adjust the following:
+    - Number of injectors (4, 6 or 8)
+    - Injection Time
+    - RPM
+    - Length of time the test will run
+- Support different modes
+    - Each mode should have configuration screen and running screen
+    - Modes:
+        - Testing
+            - Injection Time: Range from 2 - 12 ms
+            - RPM: range from 0 - 8000, increments of 100
+        - Cleaning
+            - Injection Time should range from 5 - 20 seconds, increments of 5
+            - RPM: Range from 1 - 200 (use knob)
 
-injectors go from from 2 ms to 15 ms
-
-injector feeds for 15ms. then it closes. It is closed for 2 turns of the engine
-
-injector injects onces per two turns of engine
-
-Example: engine runs at 1000 RPM
-
-2 ms to 15 ms is always the range of time that it is open
-Injector opens every two rotations of the engine
-
-
-
-Issue with Arduino/Protothreads/Printing to LCD Every Frame:
+# Problems
 - If printing to LCD screen every frame, digital output to pins other than 13 does not work.
-
-Possible Solution:
-    - Only drive the fuel injectors when in DRIVE_INJECTORS mode. In this mode, the UI is not updated. After exiting this mode, the UI will become responsive again.
+    - Possible Solution: Only drive the fuel injectors when in DRIVE_INJECTORS mode. In this mode, the UI is not updated. After exiting this mode, the UI will become responsive again.
 
 # Express PCB Plus Grid Layout:
 Grid: 2.5 mm
