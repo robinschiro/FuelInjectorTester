@@ -35,7 +35,7 @@ An Arduino-based device used to control fuel injectors for testing purposes.
             - RPM: range from 0 - 8000, increments of 100
         - Cleaning
             - Injection Time should range from 5 - 20 seconds, increments of 5
-            - RPM: Range from 1 - 200 (use knob)
+            - RPM: Range from 1 - 200 (use knob), increments of 1
 
 # Problems
 - If printing to LCD screen every frame, digital output to pins other than 13 does not work.
@@ -44,3 +44,8 @@ An Arduino-based device used to control fuel injectors for testing purposes.
 # Express PCB Plus Grid Layout:
 Grid: 2.5 mm
 Snap: 0.25 mm
+
+
+# Open questions
+- Does simulating the firing order really matter?
+	- Downside: Requires extra logic in the code
