@@ -3,6 +3,9 @@
  * These correspond to physical pins 3, 4, 5, 6 and 7 on the LCD Keypad Shield (respectively)
  */
 
+#include "Menu.h"
+#include "NumberSetting.h"
+#include "Configuration.h"
 #include <LiquidCrystal.h>
 #include <pt.h>
 
@@ -38,6 +41,9 @@ typedef enum _Mode
 
 // Instantiate LCD panel struct with selected pins.
 LiquidCrystal LCD(8, 9, 4, 5, 6, 7);
+
+// Create main menu.
+MenuClass mainMenu(&LCD);
 
 // Create array of pins to be used for fuel injectors.
 // The order of the pins in this array matches the order of the LEDs on the board.
