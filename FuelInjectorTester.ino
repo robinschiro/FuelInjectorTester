@@ -3,6 +3,7 @@
  * These correspond to physical pins 3, 4, 5, 6 and 7 on the LCD Keypad Shield (respectively)
  */
 
+#include "MenuOption.h"
 #include "Menu.h"
 #include "NumberSetting.h"
 #include "Configuration.h"
