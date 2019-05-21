@@ -9,17 +9,15 @@
 	#include "WProgram.h"
 #endif
 
-class ConfigurationClass
+class Configuration
 {
-protected:
+private:
 	int injectorsToRun[];
-
-public:
-	void Init();
-
+  int numInjectors;
+  int rpm;
+  int injectionTimeInMicroseconds;
+  int timeToRunInSeconds;
 };
-
-extern ConfigurationClass Configuration;
 
 #endif
 

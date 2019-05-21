@@ -38,13 +38,22 @@ typedef enum _Mode
 	DriveUI
 } Mode;
 
+enum OperatingMode
+{
+  Test,
+  Clean
+};
+
 /* Globals */
 
 // Instantiate LCD panel struct with selected pins.
 LiquidCrystal LCD(8, 9, 4, 5, 6, 7);
 
+// Tester configuration. Should be loaded from EEPROM.
+Configuration config;
+
 // Create main menu.
-MenuClass mainMenu(&LCD);
+Menu mainMenu(&LCD, &config);
 
 // Create array of pins to be used for fuel injectors.
 // The order of the pins in this array matches the order of the LEDs on the board.
@@ -100,12 +109,15 @@ void setup()
 	LCD.begin(16, 2);
 	LCD.setCursor(0, 0);
 
-    PrintMode();
+  PrintMode();
 
 	CalculateDelayAndRpmFromPot();
 
 	// Move to the begining of the second line
 	PrintConfigInfo(CurrentRPM, CurrentInjectionTime, CurrentNumCylinders);
+
+  // Load configuration from EEPROM.
+  // LoadConfigurationFromEEPROM();
 }
 
 void loop()
@@ -113,6 +125,9 @@ void loop()
 	ProcessUI(&UiThread);
 	DriveFuelInjectorsPT(&DriverThread);
 }
+
+Configuration* LoadConfigurationFromEEPROM(OperatingMode mode);
+void SaveConfigurationToEEPROM(OperatingMode mode, Configuration* config);
 
 // Read the buttons
 int ReadLCDButtons()

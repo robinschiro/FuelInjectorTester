@@ -9,6 +9,27 @@
 	#include "WProgram.h"
 #endif
 
+#include "Menu.h"
+
+enum SelectAction
+{
+  Edit,
+  OpenMenu
+};
+
+class MenuOption
+{
+
+private:
+  char* displayName;
+  SelectAction selectAction;
+  void* value;
+  void* valueOptions[];
+  Menu menuToOpen;
+
+};
+  
+
 
 #endif
 

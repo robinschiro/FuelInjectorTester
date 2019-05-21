@@ -4,20 +4,20 @@
 
 #include "Menu.h"
 
-MenuClass::MenuClass(LiquidCrystal* inputLcd) : lcd(inputLcd)
+Menu::Menu(LiquidCrystal* inputLcd, Configuration* inputConfig) : lcd(inputLcd), config(inputConfig)
 {
 }
 
-void MenuClass::OnInput(int LcdKey)
+void Menu::OnInput(int LcdKey)
 {
 }
 
-void MenuClass::DisplayMenu()
+void Menu::DisplayMenu()
 {
 	this->PrintToLine("Hello World!", 0);
 }
 
-void MenuClass::PrintToLine(char* data, int lineNumber)
+void Menu::PrintToLine(char* data, int lineNumber)
 {
 	this->lcd->setCursor(0, lineNumber);
 
@@ -27,4 +27,4 @@ void MenuClass::PrintToLine(char* data, int lineNumber)
 	this->lcd->print(dataFormatted);
 }
 
-//MenuClass Menu;
+//Menu Menu;

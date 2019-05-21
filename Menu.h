@@ -10,22 +10,23 @@
 	#include "WProgram.h"
 #endif
 
-class MenuClass
+#include "Configuration.h"
+
+class Menu
 {
 	protected:
 		void PrintToLine(char* data, int lineNumber);
-		
 
 	public:
+		Menu(LiquidCrystal* inputLcd, Configuration* config);
+		
 		void OnInput(int LcdKey);
-		void DisplayMenu();
-		MenuClass(LiquidCrystal* inputLcd);
+		void DisplayMenu();		
 
 	private:
 		LiquidCrystal* lcd;
+    Configuration* config;
 };
-
-//extern MenuClass Menu;
 
 #endif
 
